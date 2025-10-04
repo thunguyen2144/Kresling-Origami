@@ -6,4 +6,5 @@ function [T,K,C]=Solve_FK(obj,U)
     T=Tbar+Trs;
     K = Kbar + Krs;
     C=Cbar+Cspr;
+    % C = 1;
 end

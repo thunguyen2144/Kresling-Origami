@@ -1,9 +1,9 @@
-%% Solve dynamic equation M*ddU + K*U = F(t) by RK4
+%% Solve dynamic equation M*ddU + C*Udot + K*U = F(t) by RK4
 function [Uhis, Vhis, Ahis] = Solve(obj)
 
     % Parameters
     increStep   = obj.increStep;   % số bước thời gian
-    dt          = 0.00001;         % bước thời gian
+    dt          = obj.dt;         % bước thời gian
     assembly    = obj.assembly;
     supp        = obj.supp;
     load        = obj.load;
@@ -35,14 +35,6 @@ function [Uhis, Vhis, Ahis] = Solve(obj)
     % Force BC
     loadVec(fixDofs) = 0;
 
-    % % Mass BC
-    % for k = 1:length(fixDofs)
-    %     dof = fixDofs(k);
-    %     M(dof,:) = 0;
-    %     M(:,dof) = 0;
-    %     M(dof,dof) = 1;
-    % end
-
     % Storage
     Uhis = zeros(increStep, NodeNum, 3);
     Vhis = zeros(increStep, NodeNum, 3);
@@ -56,12 +48,12 @@ function [Uhis, Vhis, Ahis] = Solve(obj)
     function dY = f(t,Y)
         Uloc = Y(1:3*NodeNum);
         Vloc = Y(3*NodeNum+1:end);
-        % Nội lực + độ cứng
-        [T,K] = assembly.Solve_FK(reshape(Uloc,3,[]).'); 
+        % Nội lực + độ cứng + ma trận cản
+        [T,K,C] = assembly.Solve_FK(reshape(Uloc,3,[]).'); 
         [~,T] = Mod_K_For_Supp(K,supp,T);
         % Unbalance force
         Fext = loadVec;
-        rhs = Fext - T;
+        rhs = Fext - T - C*Vloc;
         A = M \ rhs; % gia tốc
         dY = [Vloc; A];
     end
@@ -82,9 +74,9 @@ function [Uhis, Vhis, Ahis] = Solve(obj)
         Vvec = Ynext(3*NodeNum+1:end);
 
         % Tính lại gia tốc tại bước này
-        [T,K] = assembly.Solve_FK(reshape(Uvec,3,[]).');
+        [T,K,C] = assembly.Solve_FK(reshape(Uvec,3,[]).');
         [~,T] = Mod_K_For_Supp(K,supp,T);
-        rhs = loadVec - T;
+        rhs = loadVec - T - C*Vvec;
         Avec = M \ rhs;
 
         % === Gán lại điều kiện biên ===

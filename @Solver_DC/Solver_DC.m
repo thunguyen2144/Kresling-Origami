@@ -7,6 +7,8 @@ classdef Solver_DC  < handle
         % assembly of the structure
         assembly
 
+        dt
+
         % storing the support information
         supp
         

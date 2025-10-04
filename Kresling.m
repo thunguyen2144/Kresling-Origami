@@ -20,10 +20,10 @@ m=1; % Số tầng của cấu trúc
 % Tham số độ cứng của cấu trúc
 sprStiff=0.000001; % Độ cứng của lò xo xoắn
 
-barE=10*10^6; % Young's modulus (Mô-đun Young)
+barE=1*10^9; % Young's modulus (Mô-đun Young)
 KLR = 900; % Khối lượng riêng kg/m3
 panelv=0.3; % Hệ số Poisson của các mặt phẳng
-panelt=5*10^-3; % Độ dày của các mặt phẳng
+panelt=2*10^-3; % Độ dày của các mặt phẳng
 
 % Tìm diện tích của các thanh (bars)
 alpha=2*pi/N;
@@ -188,7 +188,9 @@ dc.supp=[1,1,1,1; % Thiết lập các điểm cố định (supports) tại cá
          5,1,1,1;
          6,1,1,1];
 
-force=100; % Lực tác dụng
+dc.dt = 0.00001;
+
+force=120; % Lực tác dụng
 
 dc.selectedRefDisp=[6*m+1,3]; % Chọn nút tham chiếu để đo biến dạng
 
@@ -199,7 +201,7 @@ dc.load=[6*m+1,0,0,-force; % Áp dụng lực nén lên các nút trên đỉnh
          6*m+5,0,0,-force;
          6*m+6,0,0,-force;];
 
-dc.increStep=800; % Số bước tăng tải
+dc.increStep=1500; % Số bước tăng tải
 dc.tol=10^-5; % Sai số chấp nhận được
 dc.iterMax=10000; % Số lần lặp tối đa
 
@@ -211,62 +213,63 @@ Uhis;
 plots.Plot_DeformedShape(squeeze(Uhis(end,:,:))); % Vẽ hình dạng cuối cùng sau biến dạng
  plots.Plot_DeformedHis(Uhis); % Vẽ lịch sử biến dạng (đã bị chú thích)
 
-% dt          = 0.005; 
-% 
-%  time = (0:dc.increStep-1) * dt;  % vector thời gian
-% NodeNum = size(Uhis,2);
-% 
-% % Tính vận tốc tổng hợp
-% Vmag = sqrt( squeeze(Vhis(:,7,1)).^2 + squeeze(Vhis(:,7,2)).^2 + squeeze(Vhis(:,7,3)).^2 );
-% 
-% % Vẽ đồ thị
-% figure;
-% plot(time, Vmag, 'k', 'LineWidth', 1.5);
-% xlabel('Time [s]');
-% ylabel('Velocity Magnitude [m/s]');
-% title('Velocity Magnitude of Node 7');
-% grid on;
+% t = obj.dt; 
+
+ time = (0:dc.increStep-1) * dc.dt;  % vector thời gian
+NodeNum = size(Uhis,2);
+
+% Tính vận tốc tổng hợp
+h = N+1;
+Vmag = sqrt( squeeze(Vhis(:,h,1)).^2 + squeeze(Vhis(:,h,2)).^2 + squeeze(Vhis(:,h,3)).^2 );
+
+% Vẽ đồ thị
+figure;
+plot(time, Vmag, 'k', 'LineWidth', 1.5);
+xlabel('Time [s]');
+ylabel('Velocity Magnitude [m/s]');
+title('Velocity Magnitude of Node');
+grid on;
 
 
 
-% %% Find the reaction force and loading results
-% % Tìm lực phản ứng và kết quả tải
+% % %% Find the reaction force and loading results
+% % % Tìm lực phản ứng và kết quả tải
+% % 
+% % forceHis=zeros(dc.increStep,1);
+% % UrefHis=zeros(dc.increStep,1);
+% % 
+% % for i=1:dc.increStep
+% %     [F,K]=assembly.Solve_FK(squeeze(Uhis(i,:,:)));%F: véc-tơ lực nút nội bộ / lực mất cân bằng tương ứng với U;K: ma trận tiếp tuyến.
+% %     UrefHis(i)=Uhis(i,dc.selectedRefDisp(1),dc.selectedRefDisp(2));%chuyển vị Z của nút tham chiếu ở bước i.
+% %     forceHis(i)=F(dc.selectedRefDisp(2)+(dc.selectedRefDisp(1))*3);
+% % end
+% % 
+% % figure
+% % plot(-[0;UrefHis],[0;forceHis]) % Vẽ biểu đồ lực-biến dạng
+% % xlabel('Z deformation of top node (m)') % Nhãn trục X
+% % ylabel('Applied Force (N)') % Nhãn trục Y
+% % 
+% % toc % Dừng đếm thời gian
 % 
-% forceHis=zeros(dc.increStep,1);
-% UrefHis=zeros(dc.increStep,1);
-% 
-% for i=1:dc.increStep
-%     [F,K]=assembly.Solve_FK(squeeze(Uhis(i,:,:)));%F: véc-tơ lực nút nội bộ / lực mất cân bằng tương ứng với U;K: ma trận tiếp tuyến.
-%     UrefHis(i)=Uhis(i,dc.selectedRefDisp(1),dc.selectedRefDisp(2));%chuyển vị Z của nút tham chiếu ở bước i.
-%     forceHis(i)=F(dc.selectedRefDisp(2)+(dc.selectedRefDisp(1))*3);
-% end
-% 
-% figure
-% plot(-[0;UrefHis],[0;forceHis]) % Vẽ biểu đồ lực-biến dạng
-% xlabel('Z deformation of top node (m)') % Nhãn trục X
-% ylabel('Applied Force (N)') % Nhãn trục Y
-% 
-% toc % Dừng đếm thời gian
-
-% Các dòng mã dưới đây được chú thích (comment) để tính toán và vẽ biểu đồ năng lượng biến dạng,
-% nhưng không được thực thi trong phiên bản hiện tại.
-% EnergyHis=zeros(dc.increStep,2);
-% 
-% for i=1:dc.increStep
-%     % rotational spring element
-%     rotSpr.SolveFK(node,squeeze(Uhis(i,:,:)));
-%     EnergyHis(i,1)=sum(rotSpr.currentStrainEnergy_Vec);
-% 
-%     % bar element
-%     bar.SolveFK(node,squeeze(Uhis(i,:,:)));
-%     EnergyHis(i,2)=sum(bar.currentStrainEnergy_Vec);
-% 
-% end
-% 
-% figure
-% hold on
-% plot(UrefHis,EnergyHis(:,1))
-% plot(UrefHis,EnergyHis(:,2))
-% xlabel('Z deformation of top node (m)') 
-% ylabel('Strain Energy (J)')
-% legend('rotational springs','bars')
+% % Các dòng mã dưới đây được chú thích (comment) để tính toán và vẽ biểu đồ năng lượng biến dạng,
+% % nhưng không được thực thi trong phiên bản hiện tại.
+% % EnergyHis=zeros(dc.increStep,2);
+% % 
+% % for i=1:dc.increStep
+% %     % rotational spring element
+% %     rotSpr.SolveFK(node,squeeze(Uhis(i,:,:)));
+% %     EnergyHis(i,1)=sum(rotSpr.currentStrainEnergy_Vec);
+% % 
+% %     % bar element
+% %     bar.SolveFK(node,squeeze(Uhis(i,:,:)));
+% %     EnergyHis(i,2)=sum(bar.currentStrainEnergy_Vec);
+% % 
+% % end
+% % 
+% % figure
+% % hold on
+% % plot(UrefHis,EnergyHis(:,1))
+% % plot(UrefHis,EnergyHis(:,2))
+% % xlabel('Z deformation of top node (m)') 
+% % ylabel('Strain Energy (J)')
+% % legend('rotational springs','bars')
