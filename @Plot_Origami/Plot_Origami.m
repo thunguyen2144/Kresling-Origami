@@ -8,7 +8,7 @@ classdef Plot_Origami < handle
         viewAngle1=45;
         viewAngle2=45;
         displayRange=1;
-        displayRangeRatio=0.2;
+        displayRangeRatio=2;
 
         % Figure size and location control
         width=800;
@@ -17,7 +17,7 @@ classdef Plot_Origami < handle
         y0=0;
 
         % hold time for gif
-        holdTime=0.01;        
+        holdTime=0.001;        
 
         % Animation file name
         fileName='Animation.gif'

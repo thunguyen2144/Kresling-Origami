@@ -18,10 +18,10 @@ N=6; % Số mặt của đa giác đáy (6 cạnh)
 m=1; % Số tầng của cấu trúc
 
 % Tham số độ cứng của cấu trúc
-sprStiff=0.000001; % Độ cứng của lò xo xoắn
+sprStiff=0.000001; % Độ cứng của lò xo xoắn 0.000001
 
 barE=1*10^9; % Young's modulus (Mô-đun Young)
-KLR = 900; % Khối lượng riêng kg/m3
+KLR = 900; % Khối lượng riêng kg/m3 900
 panelv=0.3; % Hệ số Poisson của các mặt phẳng
 panelt=2*10^-3; % Độ dày của các mặt phẳng
 
@@ -181,12 +181,9 @@ node.mass_vec= (R * sin(pi/N) * sqrt( H^2 + 4*R^2 * (sin(theta/2))^2 * (sin(2*pi
 % Thiết lập bộ điều khiển tải
 dc=Solver_DC;
 dc.assembly=assembly;
-dc.supp=[1,1,1,1; % Thiết lập các điểm cố định (supports) tại các nút đáy
-         2,1,1,1;
-         3,1,1,1;
-         4,1,1,1;
-         5,1,1,1;
-         6,1,1,1];
+
+dc.supp = [(1:N)'  ones(N,3)];
+
 
 dc.dt = 0.00001;
 
@@ -199,28 +196,28 @@ dc.load=[6*m+1,0,0,-force; % Áp dụng lực nén lên các nút trên đỉnh
          6*m+3,0,0,-force;
          6*m+4,0,0,-force;
          6*m+5,0,0,-force;
-         6*m+6,0,0,-force;];
+         6*m+6,0,0,-force];
 
 dc.increStep=1500; % Số bước tăng tải
 dc.tol=10^-5; % Sai số chấp nhận được
 dc.iterMax=10000; % Số lần lặp tối đa
 
-[Uhis, Vhis, Ahis] = dc.Solve(); % Chạy mô phỏng và lưu trữ lịch sử biến dạng
+% [Uhis, Vhis, Ahis] = dc.Solve_byRK4(); % Chạy mô phỏng và lưu trữ lịch sử biến dạng
+[Uhis, Vhis, Ahis] = dc.Solve_byNewmark_beta();
 % [Uhis] = dc.Solve();
 Uhis;
 
 % plots.fileName='Kresling.gif';
 plots.Plot_DeformedShape(squeeze(Uhis(end,:,:))); % Vẽ hình dạng cuối cùng sau biến dạng
- plots.Plot_DeformedHis(Uhis); % Vẽ lịch sử biến dạng (đã bị chú thích)
+plots.Plot_DeformedHis(Uhis); % Vẽ lịch sử biến dạng (đã bị chú thích)
 
-% t = obj.dt; 
-
- time = (0:dc.increStep-1) * dc.dt;  % vector thời gian
+time = (0:dc.increStep-1) * dc.dt;  % vector thời gian
 NodeNum = size(Uhis,2);
 
 % Tính vận tốc tổng hợp
 h = N+1;
 Vmag = sqrt( squeeze(Vhis(:,h,1)).^2 + squeeze(Vhis(:,h,2)).^2 + squeeze(Vhis(:,h,3)).^2 );
+% Vmag = squeeze(Vhis(:,h,3));
 
 % Vẽ đồ thị
 figure;
